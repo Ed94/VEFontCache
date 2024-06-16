@@ -930,7 +930,7 @@ static ve_atlas_region ve_fontcache_decide_codepoint_region( ve_fontcache* cache
 		state = &cache->atlas.stateA;
 		next_idx = &cache->atlas.next_atlas_idx_A;
 	} 
-	else if ( bwidth_scaled <= VE_FONTCACHE_ATLAS_REGION_A_WIDTH && bheight_scaled > VE_FONTCACHE_ATLAS_REGION_A_HEIGHT )
+	else if ( bwidth_scaled <= VE_FONTCACHE_ATLAS_REGION_B_WIDTH && bheight_scaled > VE_FONTCACHE_ATLAS_REGION_B_HEIGHT )
 	{
 		// Region B for tall glyphs. These are good for things such as european alphabets.
 		region = 'B';
@@ -1579,17 +1579,18 @@ static void ve_fontcache_draw_text_batch( ve_fontcache* cache, ve_fontcache_entr
 
 bool ve_fontcache_draw_text( ve_fontcache* cache, ve_font_id font, const std::string& text_utf8, float posx, float posy, float scalex, float scaley )
 {
+	STBTT_assert(cache);
+	STBTT_assert(font >= 0 && font < cache->entry.size());
 	ve_fontcache_shaped_text& shaped = ve_fontcache_shape_text_cached( cache, font, text_utf8 );
 	
-	if ( cache->snap_width ) posx = ( ( int ) ( posx * cache->snap_width + 0.5f ) ) / ( float ) cache->snap_width;
+	if ( cache->snap_width  ) posx = ( ( int ) ( posx * cache->snap_width  + 0.5f ) ) / ( float ) cache->snap_width;
 	if ( cache->snap_height ) posy = ( ( int ) ( posy * cache->snap_height + 0.5f ) ) / ( float ) cache->snap_height;
 
-	STBTT_assert( cache );
-	STBTT_assert( font >= 0 && font < cache->entry.size() );
 	ve_fontcache_entry& entry = cache->entry[ font ];
 
 	int batch_start_idx = 0;
-	for( int i = 0; i < shaped.glyphs.size(); i++ ) {
+	for( int i = 0; i < shaped.glyphs.size(); i++ )
+	{
 		ve_glyph glyph_index = shaped.glyphs[i];
 		if ( ve_fontcache_empty( cache, entry, glyph_index ) )
 			continue;
@@ -1602,6 +1603,7 @@ bool ve_fontcache_draw_text( ve_fontcache* cache, ve_font_id font, const std::st
 		ve_fontcache_reset_batch_codepoint_state( cache );
 		
 		ve_fontcache_cache_glyph_to_atlas( cache, font, glyph_index );
+
 		uint64_t lru_code = glyph_index + ( ( 0x100000000ULL * font ) & 0xFFFFFFFF00000000ULL );
 		cache->temp_codepoint_seen[ lru_code ] = true;
 
@@ -1633,15 +1635,17 @@ void ve_fontcache_optimise_drawlist( ve_fontcache* cache )
 		ve_fontcache_draw& draw1 = cache->drawlist.dcalls[ i ];
 		
 		bool merge = true;
-		if ( draw0.pass != draw1.pass ) merge = false;
+		if ( draw0.pass      != draw1.pass )        merge = false;
 		if ( draw0.end_index != draw1.start_index ) merge = false;
-		if ( draw0.region != draw1.region ) merge = false;
-		if ( draw1.clear_before_draw ) merge = false;
-		if ( draw0.colour[0] != draw1.colour[0] || draw0.colour[1] != draw1.colour[1] ||
-			draw0.colour[2] != draw1.colour[2] || draw0.colour[3] != draw1.colour[3] ) merge = false;
+		if ( draw0.region    != draw1.region )      merge = false;
+		if ( draw1.clear_before_draw )              merge = false;
+		if (	draw0.colour[0] != draw1.colour[0] 
+			||	draw0.colour[1] != draw1.colour[1]
+			||	draw0.colour[2] != draw1.colour[2]
+			||	draw0.colour[3] != draw1.colour[3] ) merge = false;
 
 		if ( merge ) {
-			draw0.end_index = draw1.end_index;
+			draw0.end_index   = draw1.end_index;
 			draw1.start_index = draw1.end_index = 0;
 		} else {
 			ve_fontcache_draw& draw2 = cache->drawlist.dcalls[ ++write_idx ];
