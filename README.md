@@ -1,3 +1,19 @@
+# Fork of Xi Ma Chen's awesome library
+
+Nothing much different from the original yet as this was manily updated as I ported the implementation to Odin-lang. I do want to update it incase I do end up using this in C++ in the future.
+
+## TODO:
+
+* Switch from using ELFhash64 for shape text to using a derivative of the djb2 algo.
+* Add support for C++ namespaces
+* Add support to generate a refactor to c namespaces using a script
+* Swap STL usage with custom implementation
+* Convert macro constants to runtime constants
+* Abstract font parser and shaper libs to a wrapped interface
+* Add support for freetype parser
+* Add support for [hamza](https://github.com/saidwho12/hamza) shaper
+* Make demo using sokol_gfx as the rendering API
+
 ![Logo](images/logo.png)
 
 VE Font Cache is a single header-only GPU font rendering library designed for game engines.
